@@ -1,29 +1,23 @@
 from PIL import Image
-import torch
+import pytest
 
-from src.preprocessing.image_loader import (
-    load_image,
-    get_inference_transform,
-)
+from src.preprocessing.compression import jpeg_recompress
 
 
-def test_load_image(tmp_path):
-    image_path = tmp_path / "test.jpg"
-
-    image = Image.new("RGB", (640, 480), color="white")
-    image.save(image_path)
-
-    loaded = load_image(image_path)
-
-    assert loaded.mode == "RGB"
-    assert loaded.size == (640, 480)
-
-
-def test_inference_transform():
+def test_jpeg_recompress():
     image = Image.new("RGB", (640, 480), color="white")
 
-    transform = get_inference_transform()
-    tensor = transform(image)
+    compressed = jpeg_recompress(image, quality=50)
 
-    assert isinstance(tensor, torch.Tensor)
-    assert tensor.shape == (3, 224, 224)
+    assert compressed.mode == "RGB"
+    assert compressed.size == (640, 480)
+
+
+def test_jpeg_quality_range():
+    image = Image.new("RGB", (100, 100), color="white")
+
+    with pytest.raises(ValueError):
+        jpeg_recompress(image, quality=0)
+
+    with pytest.raises(ValueError):
+        jpeg_recompress(image, quality=101)
